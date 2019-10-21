@@ -1,0 +1,21 @@
+﻿  FIlters.cpp
+c:\users\dimap\source\repos\filters\filters\filters.cpp(46): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+c:\users\dimap\source\repos\filters\filters\filters.cpp(73): warning C4244: '=': conversion from 'double' to '_Tp', possible loss of data
+          with
+          [
+              _Tp=uchar
+          ]
+c:\users\dimap\source\repos\filters\filters\filters.cpp(74): warning C4244: '=': conversion from 'double' to '_Tp', possible loss of data
+          with
+          [
+              _Tp=uchar
+          ]
+c:\users\dimap\source\repos\filters\filters\filters.cpp(75): warning C4244: '=': conversion from 'double' to '_Tp', possible loss of data
+          with
+          [
+              _Tp=uchar
+          ]
+c:\users\dimap\source\repos\filters\filters\filters.cpp(497): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+c:\users\dimap\source\repos\filters\filters\filters.cpp(498): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+c:\users\dimap\source\repos\filters\filters\filters.cpp(752): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+  FIlters.vcxproj -> C:\Users\dimap\source\repos\FIlters\x64\Debug\FIlters.exe
