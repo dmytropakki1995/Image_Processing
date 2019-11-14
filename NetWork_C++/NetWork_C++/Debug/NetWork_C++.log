@@ -1,0 +1,7 @@
+﻿  NetWork_C++.cpp
+c:\users\dimap\source\repos\network_c++\network_c++\network_c++.cpp(90): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+c:\users\dimap\source\repos\network_c++\network_c++\network_c++.cpp(111): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+c:\users\dimap\source\repos\network_c++\network_c++\network_c++.cpp(119): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+c:\users\dimap\source\repos\network_c++\network_c++\network_c++.cpp(249): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+c:\users\dimap\source\repos\network_c++\network_c++\network_c++.cpp(208): warning C4715: 'NeuralNetwork::Weight': not all control paths return a value
+  NetWork_C++.vcxproj -> C:\Users\dimap\source\repos\NetWork_C++\Debug\NetWork_C++.exe

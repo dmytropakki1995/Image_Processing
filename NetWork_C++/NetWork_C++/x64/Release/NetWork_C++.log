@@ -1,0 +1,7 @@
+﻿  pch.cpp
+  NetWork_C++.cpp
+  Generating code
+c:\users\dimap\source\repos\network_c++\network_c++\network_c++.cpp(212): warning C4715: 'NeuralNetwork::Weight': not all control paths return a value
+  All 23 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  NetWork_C++.vcxproj -> C:\Users\dimap\source\repos\NetWork_C++\x64\Release\NetWork_C++.exe
