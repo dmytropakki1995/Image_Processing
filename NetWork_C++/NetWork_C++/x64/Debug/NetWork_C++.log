@@ -1,0 +1,32 @@
+﻿  Cluster.cpp
+c:\users\dimap\source\repos\network_c++\network_c++\cluster.cpp(42): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data
+c:\users\dimap\source\repos\network_c++\network_c++\cluster.cpp(63): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+c:\users\dimap\source\repos\network_c++\network_c++\cluster.cpp(93): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\users\dimap\source\repos\network_c++\network_c++\cluster.cpp(99): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+c:\users\dimap\source\repos\network_c++\network_c++\cluster.cpp(309): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+c:\users\dimap\source\repos\network_c++\network_c++\cluster.cpp(310): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+c:\users\dimap\source\repos\network_c++\network_c++\cluster.cpp(311): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+c:\users\dimap\source\repos\network_c++\network_c++\cluster.cpp(332): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+c:\users\dimap\source\repos\network_c++\network_c++\cluster.cpp(333): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+c:\users\dimap\source\repos\network_c++\network_c++\cluster.cpp(334): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+c:\users\dimap\source\repos\network_c++\network_c++\cluster.cpp(336): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\users\dimap\source\repos\network_c++\network_c++\cluster.cpp(342): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+  NetWork_C++.cpp
+c:\users\dimap\source\repos\network_c++\network_c++\network_c++.cpp(147): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+c:\users\dimap\source\repos\network_c++\network_c++\network_c++.cpp(217): warning C4244: '=': conversion from 'double' to '_Tp', possible loss of data
+          with
+          [
+              _Tp=uchar
+          ]
+c:\users\dimap\source\repos\network_c++\network_c++\network_c++.cpp(218): warning C4244: '=': conversion from 'double' to '_Tp', possible loss of data
+          with
+          [
+              _Tp=uchar
+          ]
+c:\users\dimap\source\repos\network_c++\network_c++\network_c++.cpp(219): warning C4244: '=': conversion from 'double' to '_Tp', possible loss of data
+          with
+          [
+              _Tp=uchar
+          ]
+  Generating Code...
+  NetWork_C++.vcxproj -> C:\Users\dimap\source\repos\NetWork_C++\x64\Debug\NetWork_C++.exe
