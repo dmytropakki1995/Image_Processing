@@ -1,0 +1,77 @@
+import React, { useState } from 'react';
+import { Upload, Icon, message, Select, Button } from 'antd';
+import '../../styles/uploadImage.css'
+const { Option } = Select;
+
+const getBase64 = (img: any, callback: any) => {
+    const reader = new FileReader();
+    reader.addEventListener('load', () => callback(reader.result));
+    reader.readAsDataURL(img);
+}
+
+const beforeUpload = (file: any) => {
+    const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
+    if (!isJpgOrPng) {
+        message.error('You can only upload JPG/PNG file!');
+    }
+    const isLt2M = file.size / 1024 / 1024 < 2;
+    if (!isLt2M) {
+        message.error('Image must smaller than 2MB!');
+    }
+    return isJpgOrPng && isLt2M;
+}
+
+const UploadImage: React.FC = () => {
+    const imgCallback = (imgUrl: any) => {
+        setImageUrl(imgUrl)
+        setIsLoading(false)
+    }
+    const [isLoading, setIsLoading] = useState(false);
+    const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
+    const handleChange = (info: any) => {
+        if (info.file.status === 'uploading') {
+            setIsLoading(true);
+            return;
+        }
+        if (info.file.status === 'done') {
+            // Get this url from response in real world.
+            getBase64(info.file.originFileObj, imgCallback);
+        }
+    };
+
+    const uploadButton = (
+        <div>
+            <Icon type={isLoading ? 'loading' : 'plus'} />
+            <div className="ant-upload-text">Upload</div>
+        </div>
+    );
+    return (
+        <div className='uploadImage'>
+            <Select defaultValue="Choose Type" style={{ width: 150 }} onChange={(value: any)=>{console.log(value)}}>
+                <Option value="Grdient">Gradient</Option>
+                <Option value="Laplasian">Laplasian</Option>
+                <Option value="Choose Type" disabled>
+                    Choose Type
+                </Option>
+                <Option value="PCY">PCY</Option>
+            </Select>
+            <Upload
+                name="avatar"
+                listType="picture-card"
+                className="avatar-uploader"
+                showUploadList={false}
+                action="https://www.mocky.io/v2/5cc8019d300000980a055e76"
+                beforeUpload={beforeUpload}
+                onChange={handleChange}
+            >
+                {imageUrl ? <img src={imageUrl} alt="avatar" style={{ width: '100%' }} /> : uploadButton}
+            </Upload>
+            <Button>
+                Press to apply filter
+            </Button>
+        </div>
+    );
+}
+
+
+export default UploadImage;
