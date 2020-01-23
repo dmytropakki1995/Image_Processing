@@ -1,0 +1,6 @@
+1.С/С++ -> General : Additional Include Directories - ImageLibrary/ImageLibrary  путь к папке с исходниками.
+2.Linker -> Input : Additional Library Direftories - ImageLibrary/Debug - путь к папке Debug
+3.Linker -> Input : Additional Dependencies - ImageLibrary.lib
+4.Build Events -> Post-Build Event : Command Line - xcopy /y /d "\...YOUR PATH...\ImageLibrary\$(IntDIr)ImageLibrary.dll" "$(OutDir)"
+
+Platform: Win32!!!
