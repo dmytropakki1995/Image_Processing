@@ -2,6 +2,8 @@ import React from 'react';
 import {Menu, Icon, Layout} from 'antd';
 import router from '../routing/Router';
 import { routeNames } from '../routing/Routes';
+import '../styles/nav.css';
+import logo from '../images/logo.png';
 const {Sider} = Layout;
 const Nav: React.FC = () => {
     return (
@@ -15,7 +17,9 @@ const Nav: React.FC = () => {
           console.log(collapsed, type);
         }}
       >
-        <div className="logo" />
+        <div className="logo">
+          <img src={logo} width={'100%'} height={'100%'}/>
+        </div>
         <Menu theme="dark" mode="inline" defaultSelectedKeys={['1']}>
           <Menu.Item key="1" onClick={() => router.navigate(routeNames.Upload)}>
             <Icon type="upload" />

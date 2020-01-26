@@ -6,8 +6,11 @@ import Footer from './components/Footer';
 import Nav from './components/Nav';
 import Commersial from './components/Commersial';
 import { Layout , Menu, Icon} from 'antd';
+export const ThemeContext = React.createContext('dark');
+export const LanguageContext = React.createContext('en');
 
 const App = () => (
+  <ThemeContext.Provider value="dark">
   <div className='App'>
     <Layout>
       <Nav/>
@@ -23,6 +26,7 @@ const App = () => (
       </Layout>
     </Layout>
   </div>
+  </ThemeContext.Provider>
   );
 
 export default App;

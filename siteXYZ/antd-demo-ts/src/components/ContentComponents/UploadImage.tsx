@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Upload, Icon, message, Select, Button } from 'antd';
 import '../../styles/uploadImage.css'
+import { ThemeContext } from '../../App';
 const { Option } = Select;
 
 const getBase64 = (img: any, callback: any) => {
@@ -22,6 +23,8 @@ const beforeUpload = (file: any) => {
 }
 
 const UploadImage: React.FC = () => {
+    const theme = useContext(ThemeContext);
+    console.log(theme)
     const imgCallback = (imgUrl: any) => {
         setImageUrl(imgUrl)
         setIsLoading(false)
@@ -58,15 +61,16 @@ const UploadImage: React.FC = () => {
             <Upload
                 name="avatar"
                 listType="picture-card"
-                className="avatar-uploader"
+                className="avatar-uploader, uploadImage"
                 showUploadList={false}
                 action="https://www.mocky.io/v2/5cc8019d300000980a055e76"
                 beforeUpload={beforeUpload}
                 onChange={handleChange}
+                style={{right: 25}}
             >
                 {imageUrl ? <img src={imageUrl} alt="avatar" style={{ width: '100%' }} /> : uploadButton}
             </Upload>
-            <Button>
+            <Button style={{width: 150}}>
                 Press to apply filter
             </Button>
         </div>
