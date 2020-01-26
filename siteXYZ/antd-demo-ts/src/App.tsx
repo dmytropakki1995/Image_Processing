@@ -1,32 +1,26 @@
 import React from 'react';
 import './App.css';
-import Header from './components/Header';
 import Content from './components/Content';
 import Footer from './components/Footer';
-import Nav from './components/Nav';
 import Commersial from './components/Commersial';
-import { Layout , Menu, Icon} from 'antd';
+import { Layout} from 'antd';
+import Header from './components/Header';
 export const ThemeContext = React.createContext('dark');
 export const LanguageContext = React.createContext('en');
 
 const App = () => (
   <ThemeContext.Provider value="dark">
-  <div className='App'>
-    <Layout>
-      <Nav/>
+    <Layout style={{height: '100%'}} className="layout">
       <Layout>
-        <Header />
-        <Layout>
-          <div className={'contentCommersial'}>
-             <Content/>
-             <Commersial/>
-          </div>
-        </Layout>
-        <Footer />
+        <Header/>
+      </Layout >
+      <Layout className={'contentCommersial'}>
+        <Content />
+        <Commersial />
       </Layout>
-    </Layout>
-  </div>
-  </ThemeContext.Provider>
-  );
+      <Footer />
+    </Layout>,
+</ThemeContext.Provider>
+);
 
 export default App;
