@@ -5,12 +5,12 @@ import Footer from './components/Footer';
 import Commersial from './components/Commersial';
 import { Layout} from 'antd';
 import Header from './components/Header';
-export const ThemeContext = React.createContext('dark');
+export const ThemeContext = React.createContext<'dark'|'light'>('dark');
 export const LanguageContext = React.createContext('en');
 
 const App = () => (
-  <ThemeContext.Provider value="dark">
-    <Layout style={{height: '100%'}} className="layout">
+  <ThemeContext.Provider value='dark'>
+    <Layout style={{minHeight: '100%'}} className="layout">
       <Layout>
         <Header/>
       </Layout >
@@ -18,7 +18,7 @@ const App = () => (
         <Content />
         <Commersial />
       </Layout>
-      <Footer />
+      <Layout style={{ textAlign: 'center' }}>Grad-z Team ©2020</Layout>
     </Layout>,
 </ThemeContext.Provider>
 );

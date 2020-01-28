@@ -1,14 +1,15 @@
 import React from 'react';
-import {Menu, Icon} from 'antd';
+import { useContext } from 'react';
+import { Menu, Icon } from 'antd';
 import '../styles/header.css'
 import router from '../routing/Router';
 import { routeNames } from '../routing/Routes';
-import logo from "../images/logo.png";
+import { ThemeContext } from '../App';
 const Header: React.FC = () => {
     return (
       <>
       <Menu
-      theme="dark"
+      theme={useContext(ThemeContext)}
       mode="horizontal"
       defaultSelectedKeys={['1']}
       style={{ lineHeight: '64px' }}
