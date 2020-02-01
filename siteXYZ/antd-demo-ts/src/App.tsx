@@ -1,32 +1,29 @@
 import React from 'react';
 import './App.css';
-import Header from './components/Header';
 import Content from './components/Content';
-import Footer from './components/Footer';
-import Nav from './components/Nav';
+import { Provider } from 'react-redux';
 import Commersial from './components/Commersial';
-import { Layout , Menu, Icon} from 'antd';
-export const ThemeContext = React.createContext('dark');
+import { Layout} from 'antd';
+import Header from './components/Header';
+import { store } from './redusers';
+export const ThemeContext = React.createContext<'dark'|'light'>('dark');
 export const LanguageContext = React.createContext('en');
 
 const App = () => (
-  <ThemeContext.Provider value="dark">
-  <div className='App'>
-    <Layout>
-      <Nav/>
+  <Provider store={store}>
+  <ThemeContext.Provider value='dark'>
+    <Layout style={{minHeight: '100%'}} className="layout">
       <Layout>
-        <Header />
-        <Layout>
-          <div className={'contentCommersial'}>
-             <Content/>
-             <Commersial/>
-          </div>
-        </Layout>
-        <Footer />
+        <Header/>
+      </Layout >
+      <Layout className={'contentCommersial'}>
+        <Content />
+        <Commersial />
       </Layout>
-    </Layout>
-  </div>
-  </ThemeContext.Provider>
-  );
+      <Layout style={{ textAlign: 'center' }}>Grad-z Team ©2020</Layout>
+    </Layout>,
+</ThemeContext.Provider>
+</Provider>
+);
 
 export default App;
