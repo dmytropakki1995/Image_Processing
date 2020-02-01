@@ -1,4 +1,4 @@
-import { ImageLoaded, StartImageProcessing, GotProcessingResult, GotProcessingError} from "../constants/action";
+import { ImageLoaded, StartImageProcessing, GotProcessingResult, GotProcessingError, SetProcessingType} from "../constants/action";
 
 export interface ImageLoadedAction {
     type: typeof ImageLoaded;
@@ -7,6 +7,11 @@ export interface ImageLoadedAction {
 
 export interface StartImageProcessingAction {
     type: typeof StartImageProcessing;
+    payload: number;
+}
+
+export interface SetProcessingTypeAction {
+    type: typeof SetProcessingType;
     payload: number;
 }
 
@@ -20,4 +25,4 @@ export interface GotProcessingErrorAction {
     payload: string;
 }
 
-export type ImageAction = ImageLoadedAction | StartImageProcessingAction | GotProcessingResultAction | GotProcessingErrorAction;
+export type ImageAction = ImageLoadedAction | StartImageProcessingAction | GotProcessingResultAction | GotProcessingErrorAction | SetProcessingTypeAction;

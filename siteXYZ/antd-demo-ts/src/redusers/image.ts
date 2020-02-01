@@ -1,5 +1,5 @@
 import { ImageAction } from "../types/action"
-import { ImageLoaded, StartImageProcessing, GotProcessingResult, GotProcessingError } from "../constants/action"
+import { ImageLoaded, StartImageProcessing, GotProcessingResult, GotProcessingError, SetProcessingType } from "../constants/action"
 import { combineReducers } from 'redux';
 
 
@@ -47,7 +47,7 @@ const isProcessing = (state = initialState.isProcessing, action: ImageAction): b
 
 const processingType = (state = initialState.processingType, action: ImageAction): number => {
     switch (action.type) {
-        case StartImageProcessing:
+        case SetProcessingType:
             return action.payload;
         default:
             return state;
