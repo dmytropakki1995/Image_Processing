@@ -16,4 +16,6 @@ dependencies = [
     "torchvision>=0.24.1",
     "efficientnet-pytorch>=0.7.1",
     "jupyter>=1.1.1",
+    "dvc[gdrive]>=3.65.0",
+    "pathspec<0.12",
 ]
