@@ -14,6 +14,6 @@ uv venv && source .venv/bin/activate
 ## 2. Sync dependencies
 uv sync
 
-# Run Jupyter Notebook un Browser
+## 3. Run Jupyter Notebook in Browser
 uv run python -m jupyter notebook
 ```
