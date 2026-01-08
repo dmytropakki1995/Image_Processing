@@ -3,7 +3,7 @@ This simple guide is used to create **uv** project and install some Python depen
 ### 🧰 Requirements
 - **uv** version 0.9.5 or later [see the installation guide](https://docs.astral.sh/uv/getting-started/installation/)
 
-### 🛠 Installation guide
+### 🛠 Run project with UV
 ```sh
 ## 1. Install venv
 # Windows
