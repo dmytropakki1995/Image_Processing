@@ -1,4 +1,4 @@
-This simple guide is used to create **uv** project and install some Python dependencies.
+This simple guide is used to run CBOW model using PyTorch.
 
 ### 🧰 Requirements
 - **uv** version 0.9.5 or later [see the installation guide](https://docs.astral.sh/uv/getting-started/installation/)
