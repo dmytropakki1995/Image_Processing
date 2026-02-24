@@ -37,11 +37,11 @@ def get_index(data_path):
 
 def get_sequence(data_path: str):
     tokens = read_data(data_path)
-    print(" -- Total number of tokens:", len(tokens))
+    # print(" -- Total number of tokens:", len(tokens))
     
     word2idx, _ = get_index(data_path)
     vocab_size = len(word2idx)
-    print(" -- Vocab size is:", vocab_size)
+    # print(" -- Vocab size is:", vocab_size)
 
     sequence = torch.tensor(
         [word2idx[word] for word in tokens],

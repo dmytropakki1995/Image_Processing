@@ -5,7 +5,7 @@
     ],
     "window_size": 2,
     "batch_size": 128,
-    "model_path": "model/model_cpu_xBBc5.pt",
+    "model_path": "model/model_cpu_AKjJJ.pt",
     "word2idx": {
         "the": 0,
         "project": 1,
