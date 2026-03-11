@@ -9,3 +9,4 @@ This repo is used to collect programs and scripts for Image processing, LM model
 - ***ImageLibrary*** - C++ library with methods for processing images and retrieving, storing, and processing image pixel data.
 - ***NetWork_C++*** - the base Neural Network structure implementation
 - ***siteXYZ*** - web application
+
