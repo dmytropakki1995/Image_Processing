@@ -1,0 +1,2 @@
+creation_rules:
+  - gcp_kms: "projects/project-492313/locations/europe-central2/keyRings/sops-keyring/cryptoKeys/sops-key"
