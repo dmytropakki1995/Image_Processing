@@ -3,10 +3,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import string
+import os
 
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from collections import Counter
+
+from google.cloud import storage
 
 ########
 
@@ -81,3 +84,41 @@ def resize_linear(old_fc, new_vocab_size):
     nn.init.zeros_(new_fc.bias.data[old_vocab_size:])
 
     return new_fc
+
+
+
+def download_file_from_gcs(
+        bucket_name, 
+        download_dir, 
+        client_secret
+    ):
+    client = storage.Client.from_service_account_info(client_secret)
+    bucket = client.bucket(bucket_name)
+
+    blobs = bucket.list_blobs()
+    versions = set()
+
+    for blob in blobs:
+        folder = blob.name.split('/')[0]
+        if folder.startswith('version-'):
+            versions.add(folder)
+
+    # --- Find the latest version by number ---
+    latest_version = max(versions, key=lambda x: int(x.split('-')[1]))
+    print("Latest version folder:", latest_version)
+
+    if not os.path.isdir(download_dir):
+        os.makedirs("model", exist_ok=True)
+        print("Model folder has been created")
+
+    for blob in bucket.list_blobs(prefix=f"{latest_version}/"):
+        if blob.name.endswith('/'):
+            continue
+
+        filename = os.path.basename(blob.name).replace("_v3", "")
+        local_path = os.path.join(download_dir, filename)
+
+
+
+        print(f"Downloading {blob.name} -> {local_path}")
+        blob.download_to_filename(local_path)
