@@ -31,8 +31,7 @@ def get_index(data_path):
     tokens = read_data(data_path)
     word_counts = Counter(tokens)
 
-    vocab = {word: idx for idx, (word, _) in enumerate(word_counts.items(), start=1)}
-    word2idx = {word: idx for idx, (word, _) in enumerate(vocab.items())}
+    word2idx = {word: idx for idx, (word, _) in enumerate(word_counts.items())}
     idx2word = {idx: word for word, idx in word2idx.items()}
 
     return word2idx, idx2word
@@ -80,7 +79,7 @@ def resize_linear(old_fc, new_vocab_size):
     new_fc.weight.data[:old_vocab_size] = old_weight
     new_fc.bias.data[:old_vocab_size] = old_bias
 
-    nn.init.zeros_(new_fc.weight.data[old_vocab_size:])
+    nn.init.normal_(new_fc.weight.data[old_vocab_size:], mean=0, std=0.02)
     nn.init.zeros_(new_fc.bias.data[old_vocab_size:])
 
     return new_fc
@@ -108,7 +107,7 @@ def download_file_from_gcs(
     print("Latest version folder:", latest_version)
 
     if not os.path.isdir(download_dir):
-        os.makedirs("model", exist_ok=True)
+        os.makedirs(download_dir, exist_ok=True)
         print("Model folder has been created")
 
     for blob in bucket.list_blobs(prefix=f"{latest_version}/"):
