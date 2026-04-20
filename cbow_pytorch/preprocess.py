@@ -11,13 +11,14 @@ from collections import Counter
 
 from google.cloud import storage
 
-########
+# -------------------
 
 def custom_standardization(text: str) -> str:
     text = text.lower()
     translator = str.maketrans('', '', string.punctuation)
     return text.translate(translator)
 
+# -------------------
 
 def read_data(data_path):
     with open(data_path, "r", encoding="utf-8") as f:
@@ -25,6 +26,7 @@ def read_data(data_path):
     data = custom_standardization(input_data)
     return data.split()
 
+# -------------------
 
 def get_index(data_path):
     # Count word frequencies
@@ -36,6 +38,7 @@ def get_index(data_path):
 
     return word2idx, idx2word
 
+# -------------------
 
 def get_sequence(data_path: str):
     tokens = read_data(data_path)
@@ -52,6 +55,7 @@ def get_sequence(data_path: str):
 
     return sequence, vocab_size
 
+# -------------------
 
 def resize_embedding(old_emb, new_vocab_size):
     old_weight = old_emb.weight.data
@@ -67,7 +71,7 @@ def resize_embedding(old_emb, new_vocab_size):
     
     return new_emb
 
-
+# -------------------
 
 def resize_linear(old_fc, new_vocab_size):
     old_weight = old_fc.weight.data
@@ -84,7 +88,7 @@ def resize_linear(old_fc, new_vocab_size):
 
     return new_fc
 
-
+# -------------------
 
 def download_model_from_gcs(
         bucket_name, 
@@ -122,6 +126,7 @@ def download_model_from_gcs(
         else:
             print(f"Model already exists at {local_path}")
 
+# -------------------
 
 def download_data_from_gcs(
         bucket_name,

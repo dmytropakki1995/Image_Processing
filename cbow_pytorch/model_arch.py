@@ -54,33 +54,3 @@ class CBOWModel(nn.Module):
         # shape: (batch_size, vocab_size)
 
         return out
-
-
-# def custom_standardization(text: str) -> str:
-#     text = text.lower()
-#     translator = str.maketrans('', '', string.punctuation)
-#     return text.translate(translator)
-
-# with open(DATA, "r", encoding="utf-8") as f:
-#     input_data = f.read()
-# data = custom_standardization(input_data)
-
-# tokens = data.split()
-# print("Total number of tokens:", len(tokens))
-
-# # Count word frequencies
-# word_counts = Counter(tokens)
-
-# # Assign indices starting from 1 (same as Keras)
-# vocab = {word: idx for idx, (word, _) in enumerate(word_counts.items(), start=1)}
-
-# # Reverse mapping
-# word2idx = {word: idx for idx, (word, _) in enumerate(vocab.items())}
-# idx2word = {idx: word for word, idx in word2idx.items()}
-# vocab_size = len(word2idx)
-# print("Vocab size is:", vocab_size)
-
-# sequence = torch.tensor(
-#     [word2idx[word] for word in tokens],
-#     dtype=torch.long
-# )
