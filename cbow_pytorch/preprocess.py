@@ -86,12 +86,11 @@ def resize_linear(old_fc, new_vocab_size):
 
 
 
-def download_file_from_gcs(
+def download_model_from_gcs(
         bucket_name, 
-        download_dir, 
-        client_secret
+        download_dir
     ):
-    client = storage.Client.from_service_account_info(client_secret)
+    client = storage.Client()
     bucket = client.bucket(bucket_name)
 
     blobs = bucket.list_blobs()
@@ -117,7 +116,26 @@ def download_file_from_gcs(
         filename = os.path.basename(blob.name).replace("_v3", "")
         local_path = os.path.join(download_dir, filename)
 
+        if not os.path.exists(local_path):
+            print(f"Downloading {blob.name} -> {local_path}")
+            blob.download_to_filename(local_path)
+        else:
+            print(f"Model already exists at {local_path}")
 
 
-        print(f"Downloading {blob.name} -> {local_path}")
-        blob.download_to_filename(local_path)
+def download_data_from_gcs(
+        bucket_name,
+        data_path
+    ):
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+
+    if not os.path.exists(f"data/{data_path}"):
+        try:
+            blob = bucket.blob(data_path)
+            blob.download_to_filename(f"data/{data_path}")
+            print("\n -- File has been downloaded")
+        except:
+            print(f" ====== Error: failed to download '{data_path}' file from {bucket_name} GCS bucket.")
+    else:
+        print(f"Data already exists at data/{data_path}")
