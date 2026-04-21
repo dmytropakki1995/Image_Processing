@@ -28,32 +28,49 @@ def read_data(data_path):
 
 # -------------------
 
-def get_index(data_path):
-    # Count word frequencies
-    tokens = read_data(data_path)
+def get_index(data_path: str, min_freq: int = 5):
+    tokens      = read_data(data_path)
     word_counts = Counter(tokens)
 
-    word2idx = {word: idx for idx, (word, _) in enumerate(word_counts.items())}
-    idx2word = {idx: word for word, idx in word2idx.items()}
+    # Filter rare words; sort for stable, consistent index assignment
+    vocab = sorted(w for w, c in word_counts.items() if c >= min_freq)
 
-    return word2idx, idx2word
+    word2idx = {"<UNK>": 0}
+    word2idx.update({w: i + 1 for i, w in enumerate(vocab)})
+    idx2word = {i: w for w, i in word2idx.items()}
+
+    return word2idx, idx2word, word_counts
 
 # -------------------
 
-def get_sequence(data_path: str):
+def get_sequence(data_path: str, min_freq: int = 5):
     tokens = read_data(data_path)
-    # print(" -- Total number of tokens:", len(tokens))
-    
-    word2idx, _ = get_index(data_path)
+    word2idx, _, word_counts = get_index(data_path, min_freq=min_freq)
+
+    unk_idx    = word2idx["<UNK>"]
     vocab_size = len(word2idx)
-    # print(" -- Vocab size is:", vocab_size)
 
     sequence = torch.tensor(
-        [word2idx[word] for word in tokens],
+        [word2idx.get(word, unk_idx) for word in tokens],
         dtype=torch.long
     )
 
-    return sequence, vocab_size
+    return sequence, vocab_size, word_counts
+
+# -------------------
+
+def build_noise_dist(word2idx: dict, word_counts: Counter, power: float = 0.75) -> torch.Tensor:
+    vocab_size = len(word2idx)
+    freq       = torch.zeros(vocab_size)
+
+    for word, idx in word2idx.items():
+        freq[idx] = word_counts.get(word, 0) ** power
+
+    total = freq.sum()
+    if total > 0:
+        freq /= total
+
+    return freq
 
 # -------------------
 
@@ -62,13 +79,13 @@ def resize_embedding(old_emb, new_vocab_size):
     old_vocab_size, emb_dim = old_weight.shape
 
     print(f" -- Old embeddings size: {old_weight.shape}")
-    
+
     new_emb = nn.Embedding(new_vocab_size, emb_dim)
     new_emb.weight.data[:old_vocab_size] = old_weight
     nn.init.normal_(new_emb.weight.data[old_vocab_size:], mean=0, std=0.02)
 
     print(f" -- New embeddings size:{new_emb.weight.data.shape}")
-    
+
     return new_emb
 
 # -------------------
@@ -91,7 +108,7 @@ def resize_linear(old_fc, new_vocab_size):
 # -------------------
 
 def download_model_from_gcs(
-        bucket_name, 
+        bucket_name,
         download_dir
     ):
     client = storage.Client()
@@ -113,11 +130,13 @@ def download_model_from_gcs(
         os.makedirs(download_dir, exist_ok=True)
         print("Model folder has been created")
 
+    version_num = latest_version.split('-')[1]
+
     for blob in bucket.list_blobs(prefix=f"{latest_version}/"):
         if blob.name.endswith('/'):
             continue
 
-        filename = os.path.basename(blob.name).replace("_v3", "")
+        filename = os.path.basename(blob.name).replace(f"_v{version_num}", "")
         local_path = os.path.join(download_dir, filename)
 
         if not os.path.exists(local_path):
@@ -139,8 +158,37 @@ def download_data_from_gcs(
         try:
             blob = bucket.blob(data_path)
             blob.download_to_filename(f"data/{data_path}")
-            print("\n -- File has been downloaded")
+            print(f"\n -- File has been downloaded in 'data/{data_path}'")
         except:
             print(f" ====== Error: failed to download '{data_path}' file from {bucket_name} GCS bucket.")
     else:
         print(f"Data already exists at data/{data_path}")
+
+# -------------------
+
+def save_model_to_gcs(
+        bucket_name,
+        model_dir: str = "./model",
+    ):
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+
+    blobs = client.list_blobs(bucket_name, delimiter='/')
+    _ = list(blobs)
+
+    latest_version = max([int(v.split('-')[1].replace('/', '')) for v in blobs.prefixes])
+    destination_prefix = f"version-{latest_version + 1}"
+    print(f" -- New model version {latest_version + 1} will be saved in {destination_prefix}/ folder")
+
+    for root, dirs, files in os.walk(model_dir):
+        for file in files:
+            local_path = os.path.join(root, file)
+
+            # preserve folder structure in GCS
+            relative_path = os.path.relpath(local_path, model_dir)
+            gcs_path = os.path.join(destination_prefix, relative_path).replace("\\", "/")
+
+            blob = bucket.blob(gcs_path)
+            blob.upload_from_filename(local_path)
+
+            print(f"Uploaded {local_path} → gs://{bucket_name}/{gcs_path}")
