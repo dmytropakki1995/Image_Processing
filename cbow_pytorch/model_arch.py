@@ -1,86 +1,81 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from torch.utils.data import Dataset
 
 
 class CBOWDataset(Dataset):
-    def __init__(self, sequence, window_size):
-        self.data = []
+    def __init__(self, sequence: torch.Tensor, window_size: int):
+        self.sequence    = sequence
         self.window_size = window_size
+        
+        # Number of valid centre-word positions
+        self.n = len(sequence) - 2 * window_size
 
-        for i in range(window_size, len(sequence) - window_size):
-            context = torch.cat((
-                sequence[i - window_size:i],
-                sequence[i + 1:i + window_size + 1]
-            ))
-            target = sequence[i]
-            self.data.append((context, target))
+    def __len__(self) -> int:
+        return self.n
 
-    def __len__(self):
-        return len(self.data)
+    def __getitem__(self, idx: int):
+        i = idx + self.window_size
+        context = torch.cat((
+            self.sequence[i - self.window_size : i],
+            self.sequence[i + 1 : i + self.window_size + 1]
+        ))
+        return context, self.sequence[i]
 
-    def __getitem__(self, idx):
-        context, target = self.data[idx]
-        return context, target
 
+# ─────────────────────────────────────────────────────────────────────────────
 
 
 class CBOWModel(nn.Module):
-    def __init__(self, vocab_size, embedding_dim):
+    def __init__(self, vocab_size: int, embedding_dim: int):
         super().__init__()
-
         self.embedding = nn.Embedding(
             num_embeddings=vocab_size,
             embedding_dim=embedding_dim
         )
-
         self.fc = nn.Linear(embedding_dim, vocab_size)
 
-    def forward(self, x):
-        """
-        x shape: (batch_size, 2 * WINDOW_SIZE)
-        """
-        # Embedding lookup
-        embeds = self.embedding(x)  
-        # embeds shape: (batch_size, 2 * WINDOW_SIZE, embedding_dim)
-
-        # Mean over context words (equivalent to tf.reduce_mean(axis=1))
-        mean_embeds = embeds.mean(dim=1)
-        # shape: (batch_size, embedding_dim)
-
-        # Linear layer
-        out = self.fc(mean_embeds)
-        # shape: (batch_size, vocab_size)
-
-        return out
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        embeds     = self.embedding(x)
+        mean_embed = embeds.mean(dim=1)
+        return self.fc(mean_embed)
 
 
-# def custom_standardization(text: str) -> str:
-#     text = text.lower()
-#     translator = str.maketrans('', '', string.punctuation)
-#     return text.translate(translator)
+# ─────────────────────────────────────────────────────────────────────────────
 
-# with open(DATA, "r", encoding="utf-8") as f:
-#     input_data = f.read()
-# data = custom_standardization(input_data)
 
-# tokens = data.split()
-# print("Total number of tokens:", len(tokens))
+class CBOWModelNS(nn.Module):
+    def __init__(self, vocab_size: int, embedding_dim: int):
+        super().__init__()
 
-# # Count word frequencies
-# word_counts = Counter(tokens)
+        self.in_embed  = nn.Embedding(vocab_size, embedding_dim)
+        self.out_embed = nn.Embedding(vocab_size, embedding_dim)
 
-# # Assign indices starting from 1 (same as Keras)
-# vocab = {word: idx for idx, (word, _) in enumerate(word_counts.items(), start=1)}
+        nn.init.uniform_(self.in_embed.weight, -0.5 / embedding_dim, 0.5 / embedding_dim)
+        nn.init.zeros_(self.out_embed.weight)
 
-# # Reverse mapping
-# word2idx = {word: idx for idx, (word, _) in enumerate(vocab.items())}
-# idx2word = {idx: word for word, idx in word2idx.items()}
-# vocab_size = len(word2idx)
-# print("Vocab size is:", vocab_size)
+    # Alias so legacy code accessing model.embedding still works.
+    @property
+    def embedding(self) -> nn.Embedding:
+        return self.in_embed
 
-# sequence = torch.tensor(
-#     [word2idx[word] for word in tokens],
-#     dtype=torch.long
-# )
+    def forward(self, context: torch.Tensor, target: torch.Tensor, neg_samples: torch.Tensor) -> torch.Tensor:
+        h = self.in_embed(context).mean(dim=1)
+
+        # Positive
+        v_pos     = self.out_embed(target)
+        pos_score = F.logsigmoid((h * v_pos).sum(dim=1))
+
+        # Negative
+        v_neg     = self.out_embed(neg_samples)
+        neg_score = F.logsigmoid(-(h.unsqueeze(1) * v_neg).sum(dim=2)).sum(dim=1)
+
+        return -(pos_score + neg_score).mean()
+
+    def get_input_embeddings(self) -> torch.Tensor:
+        return self.in_embed.weight.data
+
+    def get_output_embeddings(self) -> torch.Tensor:
+        return self.out_embed.weight.data
