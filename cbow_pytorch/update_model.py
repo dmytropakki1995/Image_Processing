@@ -77,7 +77,7 @@ def load_model(cfg: dict, model_dir: str) -> nn.Module:
     return model
 
 
-def ingest_new_text(cfg: dict, new_data_path: str, sequence_path: str, min_freq: int = 5) -> tuple[dict, list[str]]:
+def ingest_new_text(cfg: dict, new_data_path: str, sequence_path: str, min_freq: int = 0) -> tuple[dict, list[str]]:
     src_hash = _file_hash(new_data_path)
     if src_hash in cfg["ingested_sources"]:
         print(f" -- Skipping '{new_data_path}': already ingested (hash match)")

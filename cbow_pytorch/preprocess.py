@@ -1,14 +1,9 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
 import string
 import os
 
-from torch.utils.data import Dataset
-from torch.utils.data import DataLoader
 from collections import Counter
-
 from google.cloud import storage
 
 # -------------------
@@ -123,8 +118,12 @@ def download_model_from_gcs(
             versions.add(folder)
 
     # --- Find the latest version by number ---
-    latest_version = max(versions, key=lambda x: int(x.split('-')[1]))
-    print("Latest version folder:", latest_version)
+    try:
+        latest_version = max(versions, key=lambda x: int(x.split('-')[1]))
+        print("Latest version folder:", latest_version)
+    except ValueError:
+        print(f"No model versions found in {bucket_name} GCS bucket.")
+        return
 
     if not os.path.isdir(download_dir):
         os.makedirs(download_dir, exist_ok=True)
@@ -176,7 +175,12 @@ def save_model_to_gcs(
     blobs = client.list_blobs(bucket_name, delimiter='/')
     _ = list(blobs)
 
-    latest_version = max([int(v.split('-')[1].replace('/', '')) for v in blobs.prefixes])
+    try:
+        latest_version = max([int(v.split('-')[1].replace('/', '')) for v in blobs.prefixes])
+    except ValueError as e:
+        print("No model versions found. Starting with version 1")
+        latest_version = 0
+
     destination_prefix = f"version-{latest_version + 1}"
     print(f" -- New model version {latest_version + 1} will be saved in {destination_prefix}/ folder")
 
@@ -184,11 +188,10 @@ def save_model_to_gcs(
         for file in files:
             local_path = os.path.join(root, file)
 
-            # preserve folder structure in GCS
             relative_path = os.path.relpath(local_path, model_dir)
             gcs_path = os.path.join(destination_prefix, relative_path).replace("\\", "/")
 
             blob = bucket.blob(gcs_path)
-            blob.upload_from_filename(local_path)
+            blob.upload_from_filename(local_path, timeout=300)
 
             print(f"Uploaded {local_path} → gs://{bucket_name}/{gcs_path}")

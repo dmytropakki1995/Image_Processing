@@ -6,10 +6,6 @@ import update_model
 import model_arch
 
 def load_embeddings_and_vocab(config_path: str = "./model/model_ns_config.json", model_dir: str = "./model"):
-    """
-    Loads the trained model and returns the input embeddings
-    along with vocabulary mappings.
-    """
     cfg = update_model.load_config(config_path)
     model = update_model.load_model(cfg, model_dir)
     model.eval()
@@ -36,9 +32,6 @@ def find_similar_words(
     idx2word: dict,
     k: int = 10
 ):
-    """
-    Finds the top-K most similar words to the query_word using cosine similarity.
-    """
     if query_word not in word2idx:
         print(f" -- Word '{query_word}' not found in vocabulary.")
         return []
