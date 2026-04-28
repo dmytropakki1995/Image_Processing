@@ -2,7 +2,7 @@ import json
 import copy
 import hashlib
 import os
-import string
+import re
 import time
 import torch
 import torch.nn as nn
@@ -24,12 +24,16 @@ def _file_hash(path: str) -> str:
 
 
 def _tokenize(path: str) -> list[str]:
-    """Lowercase + strip punctuation + split."""
     with open(path, "r", encoding="utf-8") as f:
         text = f.read()
+    # remove special characters
+    text = re.sub('[^A-Za-z0-9]+', ' ', text)
+    # remove 1 letter words
+    text = re.sub(r'(?:^| )\w(?:$| )', ' ', text).strip()
+    # lower all characters
     text = text.lower()
-    translator = str.maketrans("", "", string.punctuation)
-    return text.translate(translator).split()
+
+    return text.split()
 
 
 # ── Core flow ─────────────────────────────────────────────────────────────────
@@ -38,15 +42,14 @@ def load_config(config_path: str) -> dict:
     with open(config_path, "r") as f:
         cfg = json.load(f)
 
-    # Normalise legacy key names
     if "embedding_size" in cfg and "embedding_shape" not in cfg:
         cfg["embedding_shape"] = [None, cfg["embedding_size"]]
 
-    cfg.setdefault("sequence", [])           # legacy — migrated to sequence.pt
-    cfg.setdefault("sequence_path", None)    # OPT-5: path to binary sequence.pt
+    cfg.setdefault("sequence", [])
+    cfg.setdefault("sequence_path", None)
     cfg.setdefault("ingested_sources", [])
     cfg.setdefault("word2idx", {})
-    cfg.setdefault("word_counts", {})        # OPT-4: raw freqs for noise dist
+    cfg.setdefault("word_counts", {})
     cfg.setdefault("model_type", "CBOWModel")
 
     return cfg
@@ -56,7 +59,6 @@ def load_model(cfg: dict, model_dir: str) -> nn.Module:
     vocab_size = len(cfg["word2idx"])
     emb_dim    = cfg["embedding_shape"][1]
 
-    # Dispatch on stored model class name
     model_type = cfg.get("model_type", "CBOWModel")
     if model_type == "CBOWModelNS":
         model = model_arch.CBOWModelNS(vocab_size, emb_dim)
@@ -78,6 +80,8 @@ def load_model(cfg: dict, model_dir: str) -> nn.Module:
 
 
 def ingest_new_text(cfg: dict, new_data_path: str, sequence_path: str, min_freq: int = 0) -> tuple[dict, list[str]]:
+    
+    # Check the data hash to avoid duplicate ingestion
     src_hash = _file_hash(new_data_path)
     if src_hash in cfg["ingested_sources"]:
         print(f" -- Skipping '{new_data_path}': already ingested (hash match)")
@@ -114,7 +118,7 @@ def ingest_new_text(cfg: dict, new_data_path: str, sequence_path: str, min_freq:
     if os.path.exists(sequence_path):
         existing_seq = torch.load(sequence_path, map_location="cpu").tolist()
     else:
-        existing_seq = cfg.get("sequence", [])   # backward compat
+        existing_seq = cfg.get("sequence", [])
 
     new_indices  = [merged_vocab.get(t, unk_idx) for t in new_tokens]
     full_sequence = existing_seq + new_indices
@@ -140,11 +144,9 @@ def resize_model_if_needed(model: nn.Module, cfg: dict) -> nn.Module:
         print(f" -- Resizing model: {old_vocab_size:,} → {new_vocab_size:,} vocab entries")
 
         if isinstance(model, model_arch.CBOWModelNS):
-            # Two separate embedding tables — resize both
             model.in_embed  = preprocess.resize_embedding(model.in_embed,  new_vocab_size)
             model.out_embed = preprocess.resize_embedding(model.out_embed, new_vocab_size)
         else:
-            # Legacy full-softmax model
             model.embedding = preprocess.resize_embedding(model.embedding, new_vocab_size)
             model.fc        = preprocess.resize_linear(model.fc, new_vocab_size)
 
@@ -161,24 +163,22 @@ def train(
     device:  torch.device,
     epochs:  int   = 5,
     lr:      float = 0.001,
-    num_neg: int   = 5, # negative samples per positive pair (OPT-1)
+    num_neg: int   = 5,
 ) -> nn.Module:
 
     seq_path = cfg.get("sequence_path")
     if seq_path and os.path.exists(seq_path):
-        sequence = torch.load(seq_path, map_location="cpu")    # OPT-5
+        sequence = torch.load(seq_path, map_location="cpu")
     else:
-        # Backward compat: sequence was stored inside config JSON
         sequence = torch.tensor(cfg.get("sequence", []), dtype=torch.long)
 
     window_size = cfg["window_size"]
     batch_size  = cfg["batch_size"]
 
-    dataset = model_arch.CBOWDataset(sequence, window_size)  # OPT-2 lazy dataset
+    dataset = model_arch.CBOWDataset(sequence, window_size)
 
-    # OPT-6: DataLoader tuning — parallel workers + pinned memory
-    use_pin_memory = torch.cuda.is_available()  # pin_memory only benefits CUDA
-    num_workers    = 4                          # set to 0 if macOS multiprocessing issues
+    use_pin_memory = torch.cuda.is_available()
+    num_workers    = 4
     dataloader = DataLoader(
         dataset,
         batch_size=batch_size,
@@ -192,7 +192,6 @@ def train(
     optimizer = optim.Adam(model.parameters(), lr=lr)
     is_neg    = isinstance(model, model_arch.CBOWModelNS)
 
-    # OPT-4: Build noise distribution once — kept on CPU, only indices moved to device
     if is_neg:
         word_counts = Counter(cfg.get("word_counts", {}))
         noise_dist  = preprocess.build_noise_dist(cfg["word2idx"], word_counts)
@@ -215,7 +214,6 @@ def train(
             optimizer.zero_grad()
 
             if is_neg:
-                # One vectorised multinomial call per batch  (OPT-4)
                 neg_idx     = torch.multinomial(
                     noise_dist,
                     num_samples=num_neg * context.shape[0],
@@ -250,10 +248,9 @@ def save(
     torch.save(model.state_dict(), weights_path)
 
     cfg["model_path"]    = weights_path
-    cfg["model_type"]    = model.__class__.__name__  # persist class for reload
+    cfg["model_type"]    = model.__class__.__name__
     cfg["embedding_shape"] = list(model.embedding.weight.data.shape)
 
-    # Strip the giant sequence list from JSON — it lives in sequence.pt (OPT-5)
     save_cfg = {k: v for k, v in cfg.items() if k != "sequence"}
 
     with open(config_path, "w") as f:
@@ -284,16 +281,10 @@ def init_model(
 
     sequence_path = os.path.join(model_dir, "sequence.pt")
 
-    # 1. Load config
     cfg = load_config(config_path)
-
-    # 2. Load model (CBOWModel or CBOWModelNS based on model_type in config)
     model = load_model(cfg, model_dir)
 
-    # 3. Ingest new text (extend vocab + persist sequence.pt, deduplicate via hash)
     cfg, _ = ingest_new_text(cfg, new_data_path, sequence_path)
-
-    # 4. Resize layers if vocab grew
     model = resize_model_if_needed(model, cfg)
 
     print("\n -- Done ✓")
@@ -318,7 +309,6 @@ def init_first_model(
     print(f"   model dir : {model_dir}")
     print("=" * 55)
 
-    # 1. Base default config for Negative Sampling
     cfg = {
         "embedding_shape":  [None, embedding_dim],
         "window_size":      window_size,
@@ -331,15 +321,12 @@ def init_first_model(
         "model_path":       "model_cpu.pt"
     }
 
-    # 2. Ingest the first text file (builds vocab + sequences)
     cfg, _ = ingest_new_text(cfg, f"data/{data_path}", sequence_path, min_freq=min_freq)
 
-    # 3. Instantiate the NS Architecture
     vocab_size = len(cfg["word2idx"])
     print(f" -- Creating fresh CBOWModelNS (vocab={vocab_size:,}, dim={embedding_dim})")
     model = model_arch.CBOWModelNS(vocab_size, embedding_dim)
 
-    # 4. Save initial state (so incremental flow can pick it up later)
     save(model, cfg, model_dir, config_path)
 
     print("\n -- First-time initialisation done ✓")
