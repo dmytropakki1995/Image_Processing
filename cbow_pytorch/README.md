@@ -17,4 +17,12 @@ uv sync
 
 ## 3. Run Jupyter Notebook in Browser
 uv run python -m jupyter notebook
+
+## 4. Configure 'gcloud' (optional)
+# Run this command to authenticate with default application credentials
+gcloud auth application-default login
+
+# Run these commands to update login credentials and project
+gcloud auth login
+gcloud config set project project-492313
 ```

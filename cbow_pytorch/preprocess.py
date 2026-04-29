@@ -106,7 +106,7 @@ def download_model_from_gcs(
         bucket_name,
         download_dir
     ):
-    client = storage.Client()
+    client = storage.Client.from_service_account_json("key.json")
     bucket = client.bucket(bucket_name)
 
     blobs = bucket.list_blobs()
@@ -150,7 +150,7 @@ def download_data_from_gcs(
         bucket_name,
         data_path
     ):
-    client = storage.Client()
+    client = storage.Client.from_service_account_json("key.json")
     bucket = client.bucket(bucket_name)
 
     if not os.path.exists(f"data/{data_path}"):
@@ -169,7 +169,7 @@ def save_model_to_gcs(
         bucket_name,
         model_dir: str = "./model",
     ):
-    client = storage.Client()
+    client = storage.Client.from_service_account_json("key.json")
     bucket = client.bucket(bucket_name)
 
     blobs = client.list_blobs(bucket_name, delimiter='/')
