@@ -157,13 +157,38 @@ def resize_model_if_needed(model: nn.Module, cfg: dict) -> nn.Module:
     return model
 
 
+def monitor_model(model: nn.Module, device: torch.device, n_sample: int = 512) -> dict:
+    with torch.no_grad():
+        W_in  = model.get_input_embeddings().to(device)
+        W_out = model.get_output_embeddings().to(device)
+
+        in_norm  = W_in.norm(dim=1)
+        out_norm = W_out.norm(dim=1)
+
+        V    = W_in.shape[0]
+        idx  = torch.randint(0, V, (n_sample,), device=device)
+        vecs = torch.nn.functional.normalize(W_in[idx], dim=1)
+        sims = (vecs @ vecs.T).triu(diagonal=1)
+        mask = sims.abs() > 0
+        flat = sims[mask]
+
+    return {
+        "in_norm_mean":  in_norm.mean().item(),
+        "out_norm_mean": out_norm.mean().item(),
+        "in_norm_std":   in_norm.std().item(),
+        "iso_mean":      flat.mean().item(),
+        "iso_std":       flat.std().item(),
+    }
+
+
 def train(
-    model:   nn.Module,
-    cfg:     dict,
-    device:  torch.device,
-    epochs:  int   = 5,
-    lr:      float = 0.001,
-    num_neg: int   = 5,
+    model:        nn.Module,
+    cfg:          dict,
+    device:       torch.device,
+    epochs:       int   = 5,
+    lr:           float = 0.0001,
+    num_neg:      int   = 10,
+    monitor_step: int   = 5,
 ) -> nn.Module:
 
     seq_path = cfg.get("sequence_path")
@@ -190,48 +215,71 @@ def train(
 
     model     = model.to(device)
     optimizer = optim.Adam(model.parameters(), lr=lr)
-    is_neg    = isinstance(model, model_arch.CBOWModelNS)
 
-    if is_neg:
-        word_counts = Counter(cfg.get("word_counts", {}))
-        noise_dist  = preprocess.build_noise_dist(cfg["word2idx"], word_counts)
-        criterion   = None
-    else:
-        noise_dist  = None
-        criterion   = nn.CrossEntropyLoss()
+    word_counts = Counter(cfg.get("word_counts", {}))
+    noise_dist  = preprocess.build_noise_dist(cfg["word2idx"], word_counts)
 
     print(f"\n -- Training for {epochs} epoch(s) on {len(dataset):,} samples "
-          f"({'NEG k=' + str(num_neg) if is_neg else 'CrossEntropy'}, "
-          f"device={str(device).upper()})\n")
+          f"(NEG k={num_neg},device={str(device).upper()})\n")
+
+    headers = ["epoch", "loss", "pos_score", "neg_score", "in_norm", "out_norm", "iso_mean", "iso_std"]
+    widths = [10, 12, 10, 10, 10, 10, 10, 10, 10]
+
+    # header
+    print(" ".join(f"{h:>{w}}" for h, w in zip(headers, widths)))
+    print("-" * (sum(widths) + 20))
 
     for epoch in range(epochs):
         t0         = time.perf_counter()
         total_loss = 0.0
+        sum_pos    = 0.0
+        sum_neg    = 0.0
+        n_batches  = 0
 
         for context, target in dataloader:
             context = context.to(device)
             target  = target.to(device)
             optimizer.zero_grad()
 
-            if is_neg:
-                neg_idx     = torch.multinomial(
-                    noise_dist,
-                    num_samples=num_neg * context.shape[0],
-                    replacement=True,
-                )
-                neg_samples = neg_idx.view(context.shape[0], num_neg).to(device)
-                loss = model(context, target, neg_samples)
-            else:
-                logits = model(context)
-                loss   = criterion(logits, target)
+            idx = torch.multinomial(
+                noise_dist,
+                num_samples=num_neg * context.shape[0],
+                replacement=True,
+            )
+            neg_samples = idx.view(context.shape[0], num_neg).to(device)
+            loss = model(context, target, neg_samples)
+                
+            with torch.no_grad():
+                h       = model.in_embed(context).mean(dim=1)
+                v_pos   = model.out_embed(target)
+                v_neg   = model.out_embed(neg_samples)
+                sum_pos += torch.sigmoid((h * v_pos).sum(dim=1)).mean().item()
+                sum_neg += torch.sigmoid(-(h.unsqueeze(1) * v_neg).sum(dim=2)).mean().item()
+            
 
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=5.0)
             optimizer.step()
             total_loss += loss.item()
+            n_batches  += 1
 
         elapsed = time.perf_counter() - t0
-        print(f"   Epoch {epoch + 1:>3}/{epochs}  "
-              f"loss={total_loss:.4f}  time={elapsed:.1f}s")
+        avg_pos = sum_pos / n_batches
+        avg_neg = sum_neg / n_batches
+
+        if (epoch + 1) % monitor_step == 0:
+            m = monitor_model(model, device)
+            print(" ".join(f"{v:>{w}.4f}" if isinstance(v, float) else f"{v:>{w}}"
+                for v, w in zip([
+                        epoch+1, 
+                        total_loss, 
+                        avg_pos, 
+                        avg_neg, 
+                        m['in_norm_mean'], 
+                        m['out_norm_mean'], 
+                        m['iso_mean'], 
+                        m['iso_std']
+                    ], widths)) + f"    [{elapsed:.0f}s]")
 
     return model.to("cpu")
 
@@ -294,7 +342,7 @@ def init_model(
 def init_first_model(
     data_path:     str,
     model_dir:     str = "./model",
-    embedding_dim: int = 256,
+    embedding_dim: int = 128,
     window_size:   int = 2,
     batch_size:    int = 1024,
     min_freq:      int = 5,

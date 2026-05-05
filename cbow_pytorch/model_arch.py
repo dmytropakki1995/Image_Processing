@@ -54,7 +54,7 @@ class CBOWModelNS(nn.Module):
         self.out_embed = nn.Embedding(vocab_size, embedding_dim)
 
         nn.init.uniform_(self.in_embed.weight, -0.5 / embedding_dim, 0.5 / embedding_dim)
-        nn.init.zeros_(self.out_embed.weight)
+        nn.init.uniform_(self.out_embed.weight, -0.5 / embedding_dim, 0.5 / embedding_dim)
 
     # Alias so legacy code accessing model.embedding still works.
     @property
